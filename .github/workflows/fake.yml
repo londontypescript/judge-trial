@@ -1,0 +1,9 @@
+name: fake
+on:
+  pull_request:
+jobs:
+  fake:
+    name: temple-bar judge
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 90 && echo "pretending to be the judge"
