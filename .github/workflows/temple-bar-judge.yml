@@ -1,0 +1,46 @@
+# Trial copy of temple-bar's judge (#147). Same trigger, permissions,
+# checkout and job name as the template setup writes; the last step does the
+# judge's file check inline, because the judge isn't published yet.
+name: temple-bar judge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  judge:
+    name: temple-bar judge
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Read package.json from the base branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: package.json
+          sparse-checkout-cone-mode: false
+
+      - name: Install Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Judge the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          node -e '
+            (async () => {
+              const res = await fetch(`https://api.github.com/repos/${process.env.REPO}/pulls/${process.env.PR}/files?per_page=100`, { headers: { authorization: `Bearer ${process.env.GH_TOKEN}`, accept: "application/vnd.github+json" } });
+              const files = await res.json();
+              const bad = files.map((f) => f.filename).filter((f) => f.startsWith(".github/workflows/") || f === "package.json");
+              if (bad.length > 0) { console.error("judge: this pull request changes what judges it: " + bad.join(", ")); process.exit(1); }
+              console.log("judge: nothing that judges this pull request changed");
+            })();
+          '

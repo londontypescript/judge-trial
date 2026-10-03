@@ -1,0 +1,7 @@
+{
+  "name": "judge-trial",
+  "private": true,
+  "devDependencies": {
+    "@londontypescript/temple-bar": "0.0.6"
+  }
+}
